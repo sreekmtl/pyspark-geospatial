@@ -62,19 +62,19 @@ def mainfun():
     output_file = "~/ndvi.tif"
     driver = gdal.GetDriverByName("GTiff")
 
-    # get the spatial reference system of the data (optional)
+    # get the spatial reference system of the data
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)  # set to WGS84
 
-    # create a new GeoTIFF file with one band
-    dst_ds = driver.Create(output_file, result.shape[1], result.shape[0], 1, gdal.GDT_Float32)
+    # create a new GeoTIFF file
+    output_ds = driver.Create(output_file, result.shape[1], result.shape[0], 1, gdal.GDT_Float32)
     #setting transformation
-    dst_ds.SetGeoTransform(geoTrans)
-    # set the projection (optional)
-    dst_ds.SetProjection(srs.ExportToWkt())
+    output_ds.SetGeoTransform(geoTrans)
+    # setting projection
+    output_ds.SetProjection(srs.ExportToWkt())
 
     # write the data to the GeoTIFF file
-    dst_ds.GetRasterBand(1).WriteArray(result)
+    output_ds.GetRasterBand(1).WriteArray(result)
 
     # close the output file
     dst_ds = None
