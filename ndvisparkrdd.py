@@ -35,46 +35,46 @@ def mainfun():
     nirDs=None 
 
     #converting the band arrays into rdd
-    redRdd= spark.sparkContext.parallelize(redArray,20)
-    nirRdd= spark.sparkContext.parallelize(nirArray,20)
+    redRdd= spark.sparkContext.parallelize(redArray)
+    nirRdd= spark.sparkContext.parallelize(nirArray)
 
     print(redRdd.getNumPartitions())
 
     #calculating the ndvi (ndvi=(nir-red)/(nir+red))
     zipArr= redRdd.zip(nirRdd)
-    add= zipArr.map(lambda x: np.add(x[0],x[1]))
-    sub= zipArr.map(lambda x: np.subtract(x[1],x[0]))
+    sub= zipArr.map(lambda x: np.subtract(x[1],x[0]))  #(nir-red)
+    add= zipArr.map(lambda x: np.add(x[0],x[1]))   #(nir+red)
 
-    ndvi= sub.zip(add).map(lambda x: np.divide(x[0],x[1])).collect()
+    ndvi= sub.zip(add).map(lambda x: np.divide(x[0],x[1])).collect()   #(nir-red)/(nir+red)
 
-
-    result= np.array(ndvi).astype(np.float32)
+    #converting resultant list into numpy array
+    result= np.array(ndvi).astype(np.float32) 
 
     plt.imshow(result)
     plt.colorbar()
     plt.show()
 
-    #writing back ndvi image to disk
+    #writing ndvi image to disk
 
     output_file = "~/ndvi.tif"
     driver = gdal.GetDriverByName("GTiff")
 
-    # get the spatial reference system of the data (optional)
+    # get the spatial reference system of the data
     srs = osr.SpatialReference()
     srs.ImportFromEPSG(4326)  # set to WGS84
 
-    # create a new GeoTIFF file with one band
-    dst_ds = driver.Create(output_file, result.shape[1], result.shape[0], 1, gdal.GDT_Float32)
+    # create a new GeoTIFF file
+    output_ds = driver.Create(output_file, result.shape[1], result.shape[0], 1, gdal.GDT_Float32)
     #setting transformation
-    dst_ds.SetGeoTransform(geoTrans)
-    # set the projection (optional)
-    dst_ds.SetProjection(srs.ExportToWkt())
+    output_ds.SetGeoTransform(geoTrans)
+    # setting projection
+    output_ds.SetProjection(srs.ExportToWkt())
 
     # write the data to the GeoTIFF file
-    dst_ds.GetRasterBand(1).WriteArray(result)
+    output_ds.GetRasterBand(1).WriteArray(result)
 
     # close the output file
-    dst_ds = None
+    output_ds = None
 
     spark.stop()
 
